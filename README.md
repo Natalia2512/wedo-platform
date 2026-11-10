@@ -25,7 +25,6 @@ python3 -m venv ~/wedo-venv
 cd api && ~/wedo-venv/bin/python -m uvicorn main:app --port 8000
 ```
 
-Do not install the libraries into ArcGIS Pro's own environment.
 
 - Expert site: http://localhost:8000/expert/
 - Kiosk: http://localhost:8000/kiosk/ (best full screen, F11)
