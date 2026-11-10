@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+wedo-venv/
+
+# Simulation outputs (local runner)
+wedo_out/
+wedo_bench.json
+*.err
+eplusout.*
+
+# Data: never commit climate datasets (size + licences). Only the small mock geometry is versioned.
+data/raw/
+*.nc
+*.grib
+*.epw
+!web/data/units.geojson
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

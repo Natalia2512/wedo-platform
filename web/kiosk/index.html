@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>We DO – Kiosk (prototype)</title>
+<link rel="stylesheet" href="/vendor/maplibre-gl.css">
+<link rel="stylesheet" href="kiosk.css">
+</head>
+<body>
+<div class="frame">
+  <header class="k-top">
+    <div class="k-brand">We DO</div>
+    <ol class="dots" id="dots" aria-hidden="true"><li></li><li></li><li></li><li></li><li></li></ol>
+    <div class="k-proto">Prototype · synthetic data</div>
+  </header>
+
+  <!-- 0 · attract -->
+  <section class="screen" data-s="attract">
+    <div class="attract">
+      <h1>How will your city feel in <em>2050</em>?</h1>
+      <p>Explore the future climate and see what a building can do about it.</p>
+      <button class="big primary" data-go="place">Touch to start</button>
+    </div>
+  </section>
+
+  <!-- 1 · choose place -->
+  <section class="screen" data-s="place">
+    <h2>Choose a place</h2>
+    <div class="place">
+      <div id="kmap" class="kmap"></div>
+      <div class="side">
+        <p class="hint">Tap the map or one of these cities.</p>
+        <div class="quick" id="quick"></div>
+        <div class="map-legend">Map colour: very hot days per year in the 2040s <i></i> more</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · prediction (UREQ_8 / FREQ_10) -->
+  <section class="screen" data-s="guess">
+    <h2 id="guess-q"></h2>
+    <p class="lead" id="guess-today"></p>
+    <div class="choices" id="choices"></div>
+  </section>
+
+  <!-- 3 · reveal climate KPIs -->
+  <section class="screen" data-s="reveal">
+    <h2 id="reveal-title"></h2>
+    <p class="lead" id="reveal-feedback"></p>
+    <div class="scen" id="scen">
+      <button data-s="rcp45">If emissions are reduced</button>
+      <button data-s="rcp85">If emissions keep rising</button>
+    </div>
+    <div class="compare" id="compare"></div>
+    <div class="nav"><button class="big" data-go="place">← Another place</button>
+      <button class="big primary" data-go="building">What can a building do? →</button></div>
+  </section>
+
+  <!-- 4 · building: no action vs adaptation (UREQ_7 / FREQ_9) -->
+  <section class="screen" data-s="building">
+    <h2 id="b-title"></h2>
+    <p class="lead" id="b-lead"></p>
+    <div class="cases" id="cases"></div>
+    <div class="nav"><button class="big" data-go="reveal">← Back</button>
+      <button class="big primary" data-go="home">Take it with you →</button></div>
+  </section>
+
+  <!-- 5 · QR to phone (UREQ_9 / FREQ_11) -->
+  <section class="screen" data-s="home">
+    <div class="home">
+      <div id="qr" class="qr"></div>
+      <div>
+        <h2>Continue on your phone</h2>
+        <p class="lead">Scan the code to open the same place and period, with more indicators and the weather file.</p>
+        <button class="big primary" data-go="attract">Start again</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="k-foot" id="k-source"></footer>
+</div>
+<script src="/vendor/maplibre-gl.js"></script>
+<script src="/vendor/qrcode.js"></script>
+<script type="module" src="kiosk.js"></script>
+</body>
+</html>
