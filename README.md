@@ -11,7 +11,7 @@ Each person creates their own Python environment (it is not stored in Git). Pyth
 Windows (PowerShell), from the `wedo-platform` folder:
 
 ```powershell
-python -m venv C:\Users\<you>\wedo-venv            # outside OneDrive; ArcGIS users: use ArcGIS Pro's python.exe here
+python -m venv C:\Users\<you>\wedo-venv         
 C:\Users\<you>\wedo-venv\Scripts\python.exe -m pip install -r requirements.txt
 cd api
 C:\Users\<you>\wedo-venv\Scripts\python.exe -m uvicorn main:app --port 8000
