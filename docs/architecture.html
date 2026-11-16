@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>We DO – System Architecture</title>
+<style>
+:root{--bg:#f9f0d0;--paper:#fffcf2;--ink:#182f30;--title:#103b37;--muted:#58717d;--line:#d9cfad;--teal:#2c8682;--blue:#4d89aa;--orange:#e79551;--navy:#18385d;--lblue:#eaf1f7;--lteal:#e9f3f1;--lorange:#fff2d8;--lviolet:#f3eaf5;--violet:#8e5ba8;--todo:#c0562b;--ok:#2e7d4f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Roboto Condensed","Segoe UI",system-ui,sans-serif}
+.layout{display:grid;grid-template-columns:330px 1fr;min-height:100vh}
+aside{position:sticky;top:0;height:100vh;overflow:auto;background:var(--paper);border-right:1px solid var(--line);padding:16px}
+main{padding:28px 32px 80px;max-width:1150px}
+h1{font-size:30px;margin:0 0 4px;color:var(--title)}
+h2{font-size:22px;margin:40px 0 8px;color:var(--title);padding-top:8px}
+h3{font-size:17px;margin:20px 0 6px;color:var(--title)}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--teal);text-transform:uppercase}
+.lead{font-size:16px;margin:0 0 12px}
+.sub{color:var(--muted);margin:0}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0}
+nav a{font-size:12px;color:var(--title);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 9px;background:var(--paper)}
+.tbl{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:10px;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--navy);color:#fff;font-weight:600}
+tr:last-child td{border-bottom:0}
+td.k{font-weight:700;white-space:nowrap}
+.v{font-weight:700;color:var(--navy);white-space:nowrap}
+.note{background:var(--lorange);border-left:4px solid var(--orange);padding:10px 14px;border-radius:6px;margin:12px 0}
+.why{background:var(--lteal);border-left:4px solid var(--teal);padding:10px 14px;border-radius:6px;margin:12px 0}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;white-space:nowrap}
+.t-meas{background:#d8efe0;color:var(--ok)}.t-est{background:var(--lorange);color:var(--todo)}.t-conf{background:var(--lblue);color:var(--navy)}.t-dec{background:var(--lviolet);color:var(--violet)}
+/* assumptions panel */
+aside h2{margin:0 0 4px;font-size:18px}
+aside .grp{font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;margin:14px 0 4px;letter-spacing:.05em}
+.a{display:grid;grid-template-columns:1fr 84px;gap:6px;align-items:center;margin:3px 0}
+.a label{font-size:12.5px;line-height:1.25}
+.a label small{display:block;color:var(--muted);font-size:11px}
+.a input{width:84px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:13px;background:#fff}
+.a input.changed{background:#fff3c4;border-color:var(--orange)}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.btns button{font:inherit;font-size:12px;border:1px solid var(--title);background:#fff;color:var(--title);border-radius:6px;padding:4px 8px;cursor:pointer}
+/* diagrams */
+.lanes{display:grid;grid-template-columns:1fr 1.15fr 1.1fr 1.15fr;gap:10px;margin:12px 0}
+.lane{border-radius:12px;padding:10px;min-width:0}
+.lane h4{margin:0 0 2px;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+.lane p.s{margin:0 0 8px;font-size:12px;color:var(--muted)}
+.c{background:#fff;border:1.5px solid;border-radius:9px;padding:6px 9px;margin:7px 0;font-size:13px}
+.c b{display:block;font-size:13.5px}
+.c span{color:var(--muted);font-size:12px}
+.c i{font-style:normal;font-size:11px;font-weight:700;float:right;color:var(--muted)}
+.l1{background:var(--lblue)}.l1 h4{color:var(--blue)}.l1 .c{border-color:var(--blue)}
+.l2{background:var(--lteal)}.l2 h4{color:var(--teal)}.l2 .c{border-color:var(--teal)}
+.l3{background:var(--lorange)}.l3 h4{color:#b4652b}.l3 .c{border-color:var(--orange)}
+.l4{background:var(--lviolet)}.l4 h4{color:var(--violet)}.l4 .c{border-color:var(--violet)}
+.flowline{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font-size:12px;color:var(--muted);text-align:center;margin-top:-4px}
+.ctx{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:14px;align-items:center;margin:12px 0}
+.ctx .box{background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.ctx .sys{background:var(--title);color:#fff;border:0;text-align:center;padding:26px 14px}
+.ctx .sys b{font-size:20px;display:block}
+.ctx .box b{color:var(--title)}
+.nodes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.node{background:var(--paper);border:1.5px solid var(--navy);border-radius:12px;padding:10px 12px;font-size:13px}
+.node h4{margin:0 0 4px;color:var(--navy);font-size:15px}
+.node ul{margin:4px 0 0;padding-left:16px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:8px 0}
+.steps li{counter-increment:s;position:relative;padding:6px 10px 6px 40px;margin:5px 0;background:var(--paper);border:1px solid var(--line);border-radius:8px}
+.steps li:before{content:counter(s);position:absolute;left:10px;top:6px;width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;text-align:center;font-weight:700;font-size:13px;line-height:22px}
+.steps li small{color:var(--muted)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat .n{font-size:26px;font-weight:700;color:var(--navy)}
+.stat .l{font-size:12.5px;color:var(--muted)}
+.check{list-style:none;padding:0}.check li{padding:5px 0 5px 26px;position:relative;border-bottom:1px dashed var(--line)}
+.check li:before{content:"";position:absolute;left:3px;top:9px;width:13px;height:13px;border:2px solid var(--orange);border-radius:3px}
+@media (max-width:1000px){.layout{grid-template-columns:1fr}aside{position:static;height:auto}.lanes,.nodes{grid-template-columns:1fr 1fr}.ctx,.grid3{grid-template-columns:1fr}}
+@media print{aside{display:none}.layout{display:block}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ===================== ASSUMPTIONS PANEL ===================== -->
+<aside>
+  <h2>Assumptions</h2>
+  <p class="sub" style="font-size:12.5px">Change a value and every number in the document updates. Yellow = changed from the default. <span class="tag t-meas">measured</span> <span class="tag t-est">estimate</span> <span class="tag t-conf">to confirm</span></p>
+  <div id="panel"></div>
+  <div class="btns">
+    <button id="exp">Export values</button>
+    <button id="imp">Import values</button>
+    <button id="rst">Reset defaults</button>
+    <input type="file" id="impf" accept=".json" hidden>
+  </div>
+  <p class="sub" style="font-size:11.5px;margin-top:10px">To make a change permanent for everyone: edit the <code>ASSUMPTIONS</code> list at the bottom of this file (each line says where the value comes from).</p>
+</aside>
+
+<main>
+<p class="kicker">WBS 4.1.2 · System architecture design · owner Natalia, backup Zengqi</p>
+<h1>We DO – System Architecture</h1>
+<p class="sub">Preliminary architecture for the PDR · version 0.1 · 16 Nov 2026 · based on SysReq_Team_L_v1, the SRR review, the professor's guidance and the prototype tests</p>
+<nav>
+  <a href="#read">Read me</a><a href="#context">1 Context</a><a href="#drivers">2 Drivers</a><a href="#decisions">3 Decisions</a><a href="#blocks">4 Building blocks</a><a href="#trace">5 Traceability</a><a href="#interfaces">6 Interfaces</a><a href="#deploy">7 Deployment</a><a href="#flows">8 Flows</a><a href="#sizing">9 Sizing</a><a href="#perf">10 Budgets</a><a href="#evidence">11 Tests</a><a href="#open">12 To confirm</a><a href="#gloss">Glossary</a>
+</nav>
+
+<section id="read">
+<h2>Read me: what this document is</h2>
+<p class="lead">This is the system-level design of We DO: which parts exist, what each one does, where it runs, how the parts exchange data, and why it is built this way. Zengqi's database design, the EPW/KPI methods and the GUI all fit inside it. The architecture is frozen at the PDR; the GUI is then designed on top of it, as the professor asked at the SRR.</p>
+<div class="why"><b>How to use it.</b> Every number that depends on something not yet known (number of places, dataset size, simulation time…) comes from the <b>Assumptions</b> panel on the left. When a teammate gives you the real value, type it in: the sizing, the budgets and the tables update. Then save it permanently in the list at the end of the file, or click <i>Export values</i> and share the file.</div>
+<p>Structure: context → drivers (the requirements that shape the design) → decisions with motivations → building blocks → traceability to the requirements → interfaces → deployment on real machines → main flows → sizing → performance budgets → test evidence → what is still to confirm.</p>
+</section>
+
+<!-- 1 CONTEXT -->
+<section id="context">
+<h2>1 · System context</h2>
+<p class="lead">We DO sits between public climate datasets and three kinds of people. It never receives private data from them: the building model stays on the expert's own computer.</p>
+<div class="ctx">
+  <div>
+    <div class="box"><b>Expert user</b><br>architect, engineer, researcher: explores KPIs, downloads EPW files, simulates own building locally</div>
+    <div class="box" style="margin-top:10px"><b>Public visitor</b><br>student or passer-by at the kiosk, may continue on the phone via QR</div>
+    <div class="box" style="margin-top:10px"><b>We DO team (operator)</b><br>runs the data pipeline and publishes data releases</div>
+  </div>
+  <div class="box sys"><b>We DO</b>climate data → EPW files, climate and building KPIs → map, kiosk, phone</div>
+  <div>
+    <div class="box"><b>Climate data providers</b><br>Copernicus CDS (ERA5, ERA5-Land, CORDEX), CMCC DDS (2.2 km Italy), ESGF</div>
+    <div class="box" style="margin-top:10px"><b>OLGYAY</b><br>supervisor's server at PoliTo: storage and batch computing</div>
+    <div class="box" style="margin-top:10px"><b>EnergyPlus</b><br>installed on the expert's PC; used for the kiosk precompute on OLGYAY</div>
+  </div>
+</div>
+<p><b>Inside the system boundary:</b> pipeline, results store, API, web apps, kiosk app, local runner. <b>Outside:</b> data providers, OLGYAY hardware, EnergyPlus itself, the users' devices.</p>
+</section>
+
+<!-- 2 DRIVERS -->
+<section id="drivers">
+<h2>2 · Architectural drivers</h2>
+<p class="lead">These requirements and constraints decide the shape of the architecture. The numeric targets are user-side values (what users accept), as the professor demands: no "real-time", no TBD.</p>
+<div class="tbl"><table>
+<tr><th>Driver</th><th>Source</th><th>Consequence for the architecture</th></tr>
+<tr><td class="k">Very large raw data, small useful output</td><td>Data plan, TREQ_1–3</td><td>Heavy processing on a big private server; only results (<span class="v" data-c="pub_total_gb"></span> GB) are published.</td></tr>
+<tr><td class="k">Map responds in ≤ <span data-a="map_target_s"></span> s</td><td>UREQ (response time), TREQ_5</td><td>Everything is precomputed; the API only reads.</td></tr>
+<tr><td class="k">The expert's building model stays private</td><td>UREQ_5, TREQ_7, supervisor</td><td>Simulation runs on the expert's PC; the server never receives the IDF.</td></tr>
+<tr><td class="k">Kiosk: no simulation during a visit</td><td>FREQ_8, TREQ_5</td><td>Kiosk results are prepared in the batch pipeline.</td></tr>
+<tr><td class="k">Three ways to access: expert, kiosk, phone</td><td>UREQ_1–10</td><td>One API serves all clients; one web code base with three views.</td></tr>
+<tr><td class="k">Source, period and scenario always visible</td><td>UREQ_10, FREQ_12</td><td>Every published record carries its provenance metadata.</td></tr>
+<tr><td class="k">10-year periods, ≥ 2 scenarios</td><td>TREQ_2, supervisor</td><td>Data is organised by place × decade × scenario everywhere.</td></tr>
+<tr><td class="k">Public access from outside PoliTo</td><td>UREQ_9, OLGYAY is private</td><td>A separate public server is needed.</td></tr>
+<tr><td class="k">Student team, 8 months, exams</td><td>Course</td><td>Few, standard, free technologies; components that can be built and tested separately.</td></tr>
+</table></div>
+</section>
+
+<!-- 3 DECISIONS -->
+<section id="decisions">
+<h2>3 · Architecture decisions and why</h2>
+<p class="lead">Each decision lists the options considered and the reason for the choice. Status "proposed" means it becomes final once the team agrees, before the PDR.</p>
+<div class="tbl"><table>
+<tr><th>#</th><th>Decision</th><th>Options considered</th><th>Choice</th><th>Why</th><th>Consequence</th><th>Status</th></tr>
+<tr><td class="k">AD1</td><td>When to compute KPIs and EPW files</td><td>On request · in advance (batch)</td><td><b>In advance, in batch on OLGYAY</b></td><td>Inputs only change when a new data release is made; computing on request would need the full TB-scale data on the public server and makes responses slow. Test: on-the-fly mock reaches <span class="v" data-e="load_p95"></span> ms p95 with 10 users on 2 CPUs.</td><td>Need a release step (AD2); new indicators need a new batch run.</td><td><span class="tag t-dec">proposed</span></td></tr>
+<tr><td class="k">AD2</td><td>Where data lives</td><td>All on OLGYAY · all on a public server · split</td><td><b>Split: raw/processed on OLGYAY, results on a public server</b></td><td>OLGYAY is not reachable from the internet and holds TB of data; the public side needs only <span class="v" data-c="pub_total_gb"></span> GB.</td><td>A "release exporter" copies results; the public server is small and cheap.</td><td><span class="tag t-dec">proposed</span></td></tr>
+<tr><td class="k">AD3</td><td>Where expert simulations run</td><td>Our server · expert's PC</td><td><b>Expert's PC (local runner)</b></td><td>Supervisor's guidance; private models never uploaded; no simulation load or queue on our server.</td><td>Need compute bounds for the expert PC (SRR remark [3]) and a fixed EnergyPlus version.</td><td><span class="tag t-conf">agreed with supervisor</span></td></tr>
+<tr><td class="k">AD4</td><td>How clients get data</td><td>Each client reads files · one API</td><td><b>One read-only API (data contract)</b></td><td>Expert site, kiosk, phone and runner use the same 7 calls; the database can change without touching the GUI.</td><td>The API definition must be frozen at the PDR.</td><td><span class="tag t-dec">proposed</span></td></tr>
+<tr><td class="k">AD5</td><td>How results are stored</td><td>Database only · files only · both</td><td><b>Database for KPIs and metadata, file store for EPW</b></td><td>KPIs are small and queried by place/decade/scenario; EPW files are large text files downloaded whole.</td><td>Schema designed by Zengqi (2.2.1); files named by place/decade/scenario.</td><td><span class="tag t-dec">with Zengqi</span></td></tr>
+<tr><td class="k">AD6</td><td>Spatial unit</td><td>Provinces (107) · municipalities (<span data-a="units"></span>) · 2.2 km grid (<span data-a="grid_cells_land"></span> land cells)</td><td><b>Municipalities</b> for KPIs and EPW; 2.2 km grid only as map images for experts</td><td>Municipalities are what users know and search; EPW per grid cell would be ×<span class="v" data-c="grid_vs_units"></span> more files.</td><td><span class="v" data-c="epw_files"></span> EPW files; map geometry <span class="v" data-e="geo_gzip_mb"></span> MB gzip.</td><td><span class="tag t-conf">to confirm (D1)</span></td></tr>
+<tr><td class="k">AD7</td><td>One app or several</td><td>Separate expert, kiosk and mobile apps · one web code base</td><td><b>One web code base, three views</b> (expert, kiosk, mobile)</td><td>Same data, same API, same map component; the QR simply opens the mobile view of the same place.</td><td>Responsive layout and a kiosk mode are needed.</td><td><span class="tag t-dec">proposed</span></td></tr>
+<tr><td class="k">AD8</td><td>Kiosk hardware</td><td>Commercial totem · touch monitor + mini-PC · tablet · Raspberry Pi</td><td><b>32" PCAP touch monitor + x86 mini-PC, Ubuntu, browser in kiosk mode</b></td><td>Readable in a corridor, standard parts that can be borrowed, runs the same web app; answers SRR remark [2].</td><td>Needs a location with power and network.</td><td><span class="tag t-conf">to confirm (D5)</span></td></tr>
+<tr><td class="k">AD9</td><td>Kiosk without network</td><td>Online only · cached</td><td><b>Cache the kiosk content locally</b></td><td>A corridor kiosk must not show a browser error during a short network outage.</td><td>Kiosk content per release stays small (<span class="v" data-c="kiosk_cache_mb"></span> MB).</td><td><span class="tag t-dec">proposed</span></td></tr>
+<tr><td class="k">AD10</td><td>QR continuation</td><td>Mobile web view · email · Telegram bot</td><td><b>Link to the mobile web view</b></td><td>No personal data collected; works on every phone; nothing to maintain.</td><td>URL must encode place, decade and scenario.</td><td><span class="tag t-dec">proposed</span></td></tr>
+<tr><td class="k">AD11</td><td>Hosting of the public server</td><td>PoliTo VM · cloud VM</td><td><b>PoliTo VM</b> if available, else a small cloud VM</td><td>Free and institutional; the requirement is the same either way (section 7).</td><td>Ask the supervisor.</td><td><span class="tag t-conf">to confirm (D4)</span></td></tr>
+</table></div>
+</section>
+
+<!-- 4 BLOCKS -->
+<section id="blocks">
+<h2>4 · Building blocks</h2>
+<p class="lead">Four zones from left to right: data comes in, is processed in batch, is published read-only, and is used by the clients. Arrows run left to right; nothing flows back from users to the processing side.</p>
+<div class="lanes">
+  <div class="lane l1"><h4>Sources</h4><p class="s">external</p>
+    <div class="c"><b>Reanalyses</b><span>ERA5, ERA5-Land, 2.2 km Italy</span></div>
+    <div class="c"><b>Projections</b><span>2.2 km Italy, EURO-CORDEX, 2 scenarios</span></div>
+    <div class="c"><b>Reference IDF</b><span>from the supervisor</span></div>
+  </div>
+  <div class="lane l2"><h4>Processing · OLGYAY</h4><p class="s">private, batch, per data release</p>
+    <div class="c"><i>C1</i><b>Acquisition</b><span>download, checksums</span></div>
+    <div class="c"><i>C2</i><b>Processing & QC</b><span>units, time, gaps</span></div>
+    <div class="c"><i>C3</i><b>Bias correction & validation</b></div>
+    <div class="c"><i>C4</i><b>EPW generator</b></div>
+    <div class="c"><i>C5</i><b>KPI engine</b><span>climate + virtual building</span></div>
+    <div class="c"><i>C6</i><b>Kiosk precompute</b><span>reference building, EnergyPlus</span></div>
+    <div class="c"><i>C7</i><b>Release exporter</b></div>
+  </div>
+  <div class="lane l3"><h4>Serving · public server</h4><p class="s">read-only, on request</p>
+    <div class="c"><i>C8</i><b>Results database</b><span>KPIs, places, metadata</span></div>
+    <div class="c"><i>C9</i><b>EPW file store</b></div>
+    <div class="c"><i>C10</i><b>API</b><span>7 calls, the data contract</span></div>
+    <div class="c"><i>C10b</i><b>Web server</b><span>static apps, map geometry, HTTPS</span></div>
+  </div>
+  <div class="lane l4"><h4>Clients</h4><p class="s">users' devices</p>
+    <div class="c"><i>C11</i><b>Expert web app</b><span>map, KPI panel, EPW download</span></div>
+    <div class="c"><i>C12</i><b>Local runner</b><span>EnergyPlus + own IDF on expert PC</span></div>
+    <div class="c"><i>C13</i><b>Kiosk app</b><span>touch, quiz, comparison, QR</span></div>
+    <div class="c"><i>C14</i><b>Mobile view</b><span>opened by the QR</span></div>
+  </div>
+</div>
+<div class="flowline"><div>download (IF1)</div><div>release export (IF5)</div><div>HTTPS API (IF6–IF9)</div><div>browser / local files</div></div>
+
+<h3>Responsibilities</h3>
+<div class="tbl"><table>
+<tr><th>ID</th><th>Block</th><th>Does</th><th>Input → output</th><th>Runs on</th><th>Proposed tech</th><th>WBS · owner</th></tr>
+<tr><td class="k">C1</td><td>Acquisition</td><td>Downloads datasets, resumes, logs checksums</td><td>provider APIs → raw NetCDF</td><td>OLGYAY</td><td>Python, cdsapi, ddsapi</td><td>2.1.1 Emanuele</td></tr>
+<tr><td class="k">C2</td><td>Processing & QC</td><td>Units, local time, derived variables, gap filling, QC report</td><td>raw → processed NetCDF</td><td>OLGYAY</td><td>Python, xarray, CDO</td><td>2.1.2 Tala</td></tr>
+<tr><td class="k">C3</td><td>Bias correction & validation</td><td>Model vs reanalysis, quantile mapping, validation report</td><td>processed → validated</td><td>OLGYAY</td><td>xclim</td><td>2.1.3 / 5.1.2 Emanuele</td></tr>
+<tr><td class="k">C4</td><td>EPW generator</td><td>Builds one EPW per place, decade, scenario; format checks</td><td>validated series → EPW files</td><td>OLGYAY</td><td>Python, ladybug</td><td>3.2.1 Shiyun</td></tr>
+<tr><td class="k">C5</td><td>KPI engine</td><td>Climate and virtual-building KPIs per place, decade, scenario and year</td><td>validated series → KPI tables</td><td>OLGYAY</td><td>Python, xclim</td><td>3.2.2 Zengqi · 3.2.4 Tala</td></tr>
+<tr><td class="k">C6</td><td>Kiosk precompute</td><td>Runs the reference building, no action vs adaptation</td><td>EPW + reference IDF → building KPIs</td><td>OLGYAY</td><td>EnergyPlus, PREDYCE</td><td>3.2.3 Shiyun · 3.2.4 Tala</td></tr>
+<tr><td class="k">C7</td><td>Release exporter</td><td>Packages a versioned release, checks completeness, copies it to the public server</td><td>KPI tables + EPW → release package</td><td>OLGYAY → server</td><td>Python, rsync</td><td>4.3.1 Zengqi / Natalia</td></tr>
+<tr><td class="k">C8</td><td>Results database</td><td>Stores KPIs, places and provenance; answers queries by place/decade/scenario</td><td>release → query results</td><td>Public server</td><td>PostgreSQL/PostGIS</td><td>2.2.1–2.2.2 Zengqi</td></tr>
+<tr><td class="k">C9</td><td>EPW file store</td><td>Serves EPW files for download</td><td>release → files</td><td>Public server</td><td>file system + nginx</td><td>2.2.2 Zengqi</td></tr>
+<tr><td class="k">C10</td><td>API + web server</td><td>Read-only data contract; serves the apps and map geometry over HTTPS</td><td>DB/files → JSON, EPW</td><td>Public server</td><td>FastAPI, nginx</td><td>4.1.2 Natalia · 4.3.1</td></tr>
+<tr><td class="k">C11</td><td>Expert web app</td><td>Map, selectors, KPI panel, trends, EPW download, results viewer</td><td>API → screens</td><td>Expert browser</td><td>MapLibre, JS</td><td>4.2.1 Natalia</td></tr>
+<tr><td class="k">C12</td><td>Local runner</td><td>Downloads EPW, runs EnergyPlus on the user's IDF, writes a results file</td><td>IDF + EPW → results JSON</td><td>Expert PC</td><td>Python (stdlib), EnergyPlus</td><td>3.2.3 Shiyun · Natalia</td></tr>
+<tr><td class="k">C13</td><td>Kiosk app</td><td>Touch journey, quiz, comparison, QR, idle reset, offline cache</td><td>API → screens</td><td>Kiosk</td><td>MapLibre, JS</td><td>4.2.2 Natalia</td></tr>
+<tr><td class="k">C14</td><td>Mobile view</td><td>Same place/decade/scenario as the kiosk, phone layout</td><td>QR URL → screens</td><td>Phone browser</td><td>part of C11</td><td>4.2.1 Natalia</td></tr>
+</table></div>
+<div class="why"><b>Why this split.</b> Heavy, slow, private work (C1–C7) never meets users; user-facing parts (C8–C14) only read prepared results. Each block can be built and tested alone with fake input (the prototype already does this for C10–C14), which protects the schedule if one block is late.</div>
+</section>
+
+<!-- 5 TRACE -->
+<section id="trace">
+<h2>5 · Traceability: requirements → blocks</h2>
+<p class="lead">Every functional requirement (SysReq v1) is implemented by at least one block; every block serves at least one requirement. This is the backward traceability the professor asked for.</p>
+<div class="tbl"><table>
+<tr><th>Requirement</th><th>Short</th><th>Blocks</th></tr>
+<tr><td class="k">FREQ_1</td><td>Acquire historical and future data</td><td>C1</td></tr>
+<tr><td class="k">FREQ_2</td><td>Consistent units, time, quality checks</td><td>C2, C3</td></tr>
+<tr><td class="k">FREQ_3</td><td>Store and retrieve by place, period, scenario</td><td>C8, C9, C10</td></tr>
+<tr><td class="k">FREQ_4</td><td>Climate and building-impact indicators</td><td>C5, C6</td></tr>
+<tr><td class="k">FREQ_5</td><td>Downloadable EPW</td><td>C4, C9, C10, C11</td></tr>
+<tr><td class="k">FREQ_6</td><td>Analysis of the user's building model</td><td>C12 (with C9/C10 for the EPW)</td></tr>
+<tr><td class="k">FREQ_7</td><td>Expert interface</td><td>C11</td></tr>
+<tr><td class="k">FREQ_8</td><td>Kiosk shows prepared results only</td><td>C6, C13</td></tr>
+<tr><td class="k">FREQ_9</td><td>Kiosk building: no action vs adaptation</td><td>C6, C13</td></tr>
+<tr><td class="k">FREQ_10</td><td>Prediction question / quiz</td><td>C13</td></tr>
+<tr><td class="k">FREQ_11</td><td>Continue on a personal device</td><td>C13, C14</td></tr>
+<tr><td class="k">FREQ_12</td><td>Source, place, period, scenario, limitations shown</td><td>C7 (metadata), C10, C11, C13</td></tr>
+<tr><td class="k">TREQ_5</td><td>Queries &lt; 2 s, kiosk precomputed</td><td>C8, C10 (AD1)</td></tr>
+<tr><td class="k">TREQ_7</td><td>Simulation on expert PC</td><td>C12 (AD3)</td></tr>
+<tr><td class="k">TREQ_8</td><td>Touch kiosk, any device/OS</td><td>C13 + kiosk node (AD8)</td></tr>
+</table></div>
+<p class="sub">Update the IDs when SysReq v2 is final; the blocks do not change.</p>
+</section>
+
+<!-- 6 INTERFACES -->
+<section id="interfaces">
+<h2>6 · Interfaces (what crosses each arrow)</h2>
+<p class="lead">These are the agreements between blocks and between teammates. Freezing IF5–IF9 at the PDR is what lets the GUI work start.</p>
+<div class="tbl"><table>
+<tr><th>IF</th><th>From → to</th><th>Content</th><th>Format</th><th>Size / frequency</th><th>Agreed by</th></tr>
+<tr><td class="k">IF1</td><td>Providers → C1</td><td>Climate variables</td><td>NetCDF / GRIB via provider API</td><td><span class="v" data-c="raw_tb"></span> TB, once + updates</td><td>Emanuele</td></tr>
+<tr><td class="k">IF2</td><td>C1 → C2 → C3</td><td>Raw, processed, validated series</td><td>NetCDF, folder per dataset/variable/year</td><td>≈ <span class="v" data-c="olgyay_tb"></span> TB total on OLGYAY</td><td>Emanuele, Tala</td></tr>
+<tr><td class="k">IF3</td><td>C3 → C4, C5</td><td>Hourly series per place</td><td>NetCDF or Parquet per place</td><td><span data-a="units"></span> places</td><td>Tala, Shiyun, Zengqi</td></tr>
+<tr><td class="k">IF4</td><td>C4, C5, C6 → C7</td><td>EPW files, KPI tables, building results</td><td>EPW text · CSV/Parquet with fixed columns</td><td><span class="v" data-c="epw_files"></span> EPW · <span class="v" data-c="kpi_rows_m"></span> M KPI values</td><td>Shiyun, Zengqi, Tala</td></tr>
+<tr><td class="k">IF5</td><td>C7 → C8, C9</td><td>Versioned data release</td><td>database dump + EPW folder, checksum list</td><td><span class="v" data-c="pub_total_gb"></span> GB per release</td><td>Zengqi, Natalia</td></tr>
+<tr><td class="k">IF6</td><td>C10 → C11, C13, C14</td><td>Data contract: meta, map values, search, place summary, trend, building comparison, EPW</td><td>JSON over HTTPS (7 calls)</td><td>map ≈ <span class="v" data-a="map_payload_kb"></span> KB gzip per request</td><td>Natalia, Zengqi</td></tr>
+<tr><td class="k">IF7</td><td>C10 → C12</td><td>EPW for the expert's run</td><td>EPW over HTTPS</td><td><span class="v" data-a="epw_mb"></span> MB per case</td><td>Natalia, Shiyun</td></tr>
+<tr><td class="k">IF8</td><td>C12 → C11</td><td>Simulation results</td><td>wedo-results JSON, opened in the browser (no upload)</td><td>a few KB</td><td>Shiyun, Natalia</td></tr>
+<tr><td class="k">IF9</td><td>C10b → C11, C13</td><td>Map geometry of the places</td><td>GeoJSON (or PMTiles), gzip</td><td><span class="v" data-a="geo_gzip_mb"></span> MB once per visit</td><td>Natalia</td></tr>
+<tr><td class="k">IF10</td><td>C13 → C14</td><td>QR link</td><td>URL with place, KPI, decade, scenario</td><td>&lt; 200 characters</td><td>Natalia</td></tr>
+</table></div>
+<h3>Boundary with the database design (Zengqi)</h3>
+<p>The architecture fixes <b>what the API must be able to answer</b>: all places' values for one KPI, decade and scenario; all KPIs of one place; the yearly series of one KPI for one place; the building comparison for one place; the path of one EPW. Zengqi's schema decides <b>how</b> the database stores and indexes this. If the schema changes, the API and the GUI do not.</p>
+</section>
+
+<!-- 7 DEPLOYMENT -->
+<section id="deploy">
+<h2>7 · Deployment: the real machines</h2>
+<p class="lead">Four kinds of machine, each sized from the assumptions. This answers the professor's rule "say what hardware the system needs" and SRR remarks [2] and [3].</p>
+<div class="nodes">
+  <div class="node"><h4>N1 · OLGYAY</h4>PoliTo, supervisor's team<ul>
+    <li>Ubuntu, CLI, 256 cores, 0.5 TB RAM</li>
+    <li>Needs: ≈ <span class="v" data-c="olgyay_tb"></span> TB → request <span class="v" data-c="olgyay_request_tb"></span> TB</li>
+    <li>Runs C1–C7 in batch</li></ul></div>
+  <div class="node"><h4>N2 · Public server</h4>PoliTo VM or cloud<ul>
+    <li><span data-a="srv_vcpu"></span> vCPU · <span data-a="srv_ram_gb"></span> GB RAM</li>
+    <li>Disk ≥ <span class="v" data-c="srv_disk_gb"></span> GB SSD</li>
+    <li>Public IP, HTTPS, ≥ <span class="v" data-c="peak_mbps"></span> Mbit/s</li>
+    <li>Runs C8–C10</li></ul></div>
+  <div class="node"><h4>N3 · Expert PC</h4>user's own computer<ul>
+    <li>≥ <span data-a="pc_cores"></span> cores · ≥ 8 GB RAM · 5 GB free</li>
+    <li>Windows 10/11, macOS 13+, Ubuntu 22.04+</li>
+    <li>EnergyPlus (fixed version) + Python 3.9+</li>
+    <li>Runs C11 (browser), C12</li></ul></div>
+  <div class="node"><h4>N4 · Kiosk</h4>university corridor<ul>
+    <li>27–32" PCAP touch, ≥ 10 points, ≥ 300 cd/m²</li>
+    <li>Mini-PC x86-64, 4 cores, 8 GB, 128 GB SSD, WebGL 2</li>
+    <li>Ubuntu 24.04 + browser kiosk mode</li>
+    <li>Runs C13 (cache <span class="v" data-c="kiosk_cache_mb"></span> MB)</li></ul></div>
+</div>
+<p class="sub">Phones (N5) only need a current browser. Kiosk and expert-PC values are requirements; server values follow from the sizing in section 9.</p>
+</section>
+
+<!-- 8 FLOWS -->
+<section id="flows">
+<h2>8 · Main flows</h2>
+<h3>F1 · Data release (team, batch)</h3>
+<ol class="steps">
+<li>C1 downloads the datasets onto OLGYAY <small>(once, ≈ <span data-c="raw_tb"></span> TB; days to weeks)</small></li>
+<li>C2 processes and checks them; C3 corrects model bias and writes the validation report</li>
+<li>C4 builds <span data-c="epw_files"></span> EPW files; C5 computes the KPIs; C6 runs the reference building for the kiosk</li>
+<li>C7 checks completeness, tags the release (e.g. v1.0) and copies it to the public server <small>(<span data-c="pub_total_gb"></span> GB)</small></li>
+<li>C8/C9 switch to the new release in one step, so users never see half-loaded data</li>
+</ol>
+<h3>F2 · Expert session</h3>
+<ol class="steps">
+<li>Open the site: the app and the map geometry load <small>(<span data-a="geo_gzip_mb"></span> MB)</small></li>
+<li>Choose KPI, decade, scenario: the map recolours <small>(budget ≤ <span data-a="map_target_s"></span> s; prototype ≈ <span data-e="switch_ms"></span> ms)</small></li>
+<li>Click a place: KPI panel and trend chart</li>
+<li>Download the EPW <small>(<span data-a="epw_mb"></span> MB)</small> or run the local runner, which downloads it itself</li>
+<li>The runner simulates <span data-a="runs_session"></span> cases on the expert PC <small>(≈ <span data-c="session_min"></span> min)</small> and writes a results file</li>
+<li>The expert opens the results file in the browser: it is read locally, never uploaded</li>
+</ol>
+<h3>F3 · Kiosk visit</h3>
+<ol class="steps">
+<li>Touch to start; choose a place on the map or a city button</li>
+<li>Answer the prediction question(s)</li>
+<li>See today vs future for 3–4 simple KPIs, with a scenario toggle</li>
+<li>See the reference building, no action vs adaptation (precomputed by C6)</li>
+<li>Scan the QR: the phone opens the mobile view of the same place (C14)</li>
+<li>After <span data-a="idle_s"></span> s without touches the kiosk resets</li>
+</ol>
+</section>
+
+<!-- 9 SIZING -->
+<section id="sizing">
+<h2>9 · Sizing (orders of magnitude)</h2>
+<p class="lead">Computed from the assumptions on the left. The formula is always cells (or places) × time steps × variables × bytes.</p>
+<div class="grid3">
+  <div class="stat"><div class="n"><span data-c="olgyay_tb"></span> TB</div><div class="l">on OLGYAY (raw + processed) → request <span data-c="olgyay_request_tb"></span> TB</div></div>
+  <div class="stat"><div class="n"><span data-c="pub_total_gb"></span> GB</div><div class="l">published per release (EPW + database)</div></div>
+  <div class="stat"><div class="n"><span data-c="session_mb"></span> MB</div><div class="l">downloaded in a typical expert session</div></div>
+</div>
+<div class="tbl"><table>
+<tr><th>Quantity</th><th>Calculation</th><th>Result</th></tr>
+<tr><td>2.2 km reanalysis</td><td><span data-a="grid_cells_domain"></span> cells × 8,766 h × <span data-a="years_rean"></span> yr × <span data-a="raw_vars"></span> var × <span data-a="bytes"></span> B × <span data-a="compression"></span></td><td class="v"><span data-c="rean_tb"></span> TB</td></tr>
+<tr><td>2.2 km projections</td><td>cells × 8,766 h × (<span data-a="years_proj_hist"></span> + <span data-a="years_proj_fut"></span> × <span data-a="scenarios"></span>) yr × var × B × compression</td><td class="v"><span data-c="proj_tb"></span> TB</td></tr>
+<tr><td>Other datasets (ERA5, ERA5-Land, CORDEX)</td><td>estimate</td><td class="v"><span data-a="other_tb"></span> TB</td></tr>
+<tr><td>Processed + validated copies</td><td>raw × <span data-a="processed_factor"></span></td><td class="v"><span data-c="proc_tb"></span> TB</td></tr>
+<tr><td>EPW sets</td><td><span data-a="hist_decades"></span> past decades + <span data-a="fut_decades"></span> future × <span data-a="scenarios"></span> scenarios</td><td class="v"><span data-c="epw_sets"></span></td></tr>
+<tr><td>EPW files</td><td><span data-a="units"></span> places × sets × <span data-a="epw_mb"></span> MB</td><td class="v"><span data-c="epw_files"></span> files · <span data-c="epw_gb"></span> GB</td></tr>
+<tr><td>KPI values</td><td>places × <span data-a="kpis"></span> KPIs × (sets + <span data-a="trend_years"></span> yearly values × <span data-a="scenarios"></span>)</td><td class="v"><span data-c="kpi_rows_m"></span> M values · <span data-c="db_gb"></span> GB</td></tr>
+<tr><td>Public server disk</td><td>(EPW + DB + apps) × <span data-a="disk_margin"></span> margin</td><td class="v"><span data-c="srv_disk_gb"></span> GB</td></tr>
+<tr><td>Expert session download</td><td>geometry + <span data-a="switches"></span> map switches + panels + 1 EPW</td><td class="v"><span data-c="session_mb"></span> MB</td></tr>
+<tr><td>Daily traffic</td><td><span data-a="sessions_day"></span> sessions × session</td><td class="v"><span data-c="daily_gb"></span> GB/day</td></tr>
+<tr><td>Peak bandwidth</td><td><span data-a="users_peak"></span> users each loading the geometry within <span data-a="map_target_s"></span> s</td><td class="v"><span data-c="peak_mbps"></span> Mbit/s</td></tr>
+<tr><td>Kiosk offline cache</td><td>geometry + kiosk values for all places</td><td class="v"><span data-c="kiosk_cache_mb"></span> MB</td></tr>
+</table></div>
+<div class="why"><b>What the numbers tell us.</b> The TB live only on OLGYAY; a normal small VM can serve everything users see; the expert needs an ordinary laptop. This is why the split in AD1–AD3 works.</div>
+</section>
+
+<!-- 10 PERF -->
+<section id="perf">
+<h2>10 · Performance budgets</h2>
+<p class="lead">A user target is split among the blocks, so each owner knows their share. Targets are user requirements; shares are design choices.</p>
+<div class="tbl"><table>
+<tr><th>User target</th><th>Share per block</th><th>Prototype measured</th><th>Status</th></tr>
+<tr><td class="k">Map recolours ≤ <span data-a="map_target_s"></span> s</td><td>API ≤ 0.5 s · network ≤ 0.5 s · drawing ≤ 1.5 s · margin 0.5 s</td><td>API <span data-e="api_map_ms"></span> ms (mock, single user) · full switch <span data-e="switch_ms"></span> ms (software rendering)</td><td><span class="tag t-meas">on track</span></td></tr>
+<tr><td class="k">First map view ≤ 5 s</td><td>app + geometry download ≤ 2 s · basemap ≤ 2 s · draw ≤ 1 s</td><td><span data-e="first_ms"></span> ms incl. external basemap, software rendering</td><td><span class="tag t-est">check on real PC</span></td></tr>
+<tr><td class="k">Place panel ≤ 1 s</td><td>API ≤ 0.2 s · draw ≤ 0.8 s</td><td>API <span data-e="api_unit_ms"></span> ms</td><td><span class="tag t-meas">on track</span></td></tr>
+<tr><td class="k">EPW download ≤ 5 s</td><td>server ≤ 0.5 s · transfer of <span data-a="epw_mb"></span> MB</td><td><span data-e="api_epw_ms"></span> ms (generated on the fly)</td><td><span class="tag t-meas">on track</span></td></tr>
+<tr><td class="k">10 simultaneous users, same response times</td><td>precomputed reads (AD1)</td><td>mock computing on the fly: p95 <span data-e="load_p95"></span> ms, <span data-e="load_rps"></span> req/s on 2 CPUs</td><td><span class="tag t-est">needs AD1</span></td></tr>
+<tr><td class="k">Kiosk responds to a touch ≤ 1 s</td><td>local cache, no network</td><td>place screen <span data-e="kiosk_ms"></span> ms</td><td><span class="tag t-meas">on track</span></td></tr>
+<tr><td class="k">Annual local simulation ≤ <span data-a="sim_target_min"></span> min</td><td>EnergyPlus on the expert PC</td><td>assumed <span data-a="sim_min"></span> min (benchmark T2 pending)</td><td><span class="tag t-conf">T2</span></td></tr>
+<tr><td class="k">Expert session (<span data-a="runs_session"></span> runs) ≤ 15 min</td><td>parallel on cores − 1</td><td>≈ <span data-c="session_min"></span> min with assumptions</td><td><span class="tag t-conf">T2</span></td></tr>
+</table></div>
+</section>
+
+<!-- 11 EVIDENCE -->
+<section id="evidence">
+<h2>11 · Test evidence (prototype, 16 Nov 2026)</h2>
+<p class="lead">Measured on the prototype with synthetic values and the real municipality boundaries, in a cloud sandbox (2 CPUs, software WebGL). Times on a normal PC with a graphics card will be equal or better.</p>
+<div class="tbl"><table>
+<tr><th>Test</th><th>Result</th><th>What it shows</th></tr>
+<tr><td>Municipality geometry</td><td><span data-e="muni"></span> municipalities; <span data-e="geo_raw_mb"></span> MB raw → <span data-e="geo_mb"></span> MB simplified (0.003°) → <span data-e="geo_gzip_mb"></span> MB gzip</td><td>All of Italy at municipality level is a light download</td></tr>
+<tr><td>API map values (one user)</td><td>median <span data-e="api_map_ms"></span> ms, p95 <span data-e="api_map_p95"></span> ms, <span data-e="api_map_kb"></span> KB gzip</td><td>Well inside the 0.5 s share</td></tr>
+<tr><td>API place / trend</td><td><span data-e="api_unit_ms"></span> ms / <span data-e="api_trend_ms"></span> ms</td><td>Negligible</td></tr>
+<tr><td>EPW download</td><td><span data-e="epw_mb_meas"></span> MB in <span data-e="api_epw_ms"></span> ms</td><td>Even generated on the fly it is fast</td></tr>
+<tr><td>10 concurrent users</td><td><span data-e="load_rps"></span> req/s, median <span data-e="load_med"></span> ms, p95 <span data-e="load_p95"></span> ms</td><td>Computing on request does not scale: supports AD1</td></tr>
+<tr><td>Browser: map selection switch</td><td>median <span data-e="switch_ms"></span> ms (5 tries)</td><td>Recolouring 7,896 places fits the 3 s target</td></tr>
+<tr><td>Kiosk place screen</td><td><span data-e="kiosk_ms"></span> ms</td><td>Kiosk is responsive with municipalities</td></tr>
+<tr><td>Local runner pipeline</td><td>6 cases in <span data-e="runner_s"></span> s (fake EnergyPlus)</td><td>Overhead is negligible; real time comes from EnergyPlus (T2)</td></tr>
+</table></div>
+<div class="note">Found during the tests: the kiosk city buttons use province codes; with municipalities they must use municipality ISTAT codes (Torino 001272, Milano 015146, Roma 058091, …). Close zoom on a single municipality would need finer geometry (PMTiles).</div>
+</section>
+
+<!-- 12 OPEN -->
+<section id="open">
+<h2>12 · To confirm (update the panel when you know)</h2>
+<ul class="check">
+<li><b>Spatial unit</b> (D1): municipalities? → <code>units</code> · from Emanuele / team</li>
+<li><b>Dataset volumes</b> (T3): measured size of one decade → <code>compression</code>, <code>raw_vars</code>, <code>other_tb</code> · from Emanuele</li>
+<li><b>EPW sets</b> (D8): decades and scenarios → <code>hist_decades</code>, <code>fut_decades</code>, <code>scenarios</code> · from Shiyun</li>
+<li><b>KPI count</b> (D9) → <code>kpis</code> · from Zengqi and Tala</li>
+<li><b>Annual simulation time</b> (T2) → <code>sim_min</code> · from Shiyun (benchmark on every laptop)</li>
+<li><b>Server offered</b> (D4) → <code>srv_vcpu</code>, <code>srv_ram_gb</code> · from the supervisor</li>
+<li><b>Kiosk hardware and place</b> (D5) · from the supervisor</li>
+<li><b>Database row size</b> → <code>row_bytes</code> · from Zengqi's schema</li>
+<li><b>User numbers</b> (sessions per day, peak users) → <code>sessions_day</code>, <code>users_peak</code> · team decision</li>
+<li>Status of each decision in section 3: "proposed" → "agreed" after the team review</li>
+</ul>
+</section>
+
+<section id="gloss">
+<h2>Glossary</h2>
+<div class="tbl"><table>
+<tr><td class="k">API</td><td>The fixed set of requests the apps can make to the server (the "data contract").</td></tr>
+<tr><td class="k">Batch</td><td>Computed in advance in one big run, not when a user asks.</td></tr>
+<tr><td class="k">Data release</td><td>A complete, versioned set of published results (e.g. v1.0).</td></tr>
+<tr><td class="k">EPW</td><td>EnergyPlus Weather file: one year of hourly weather.</td></tr>
+<tr><td class="k">PCAP</td><td>Projected capacitive touch: the touch technology of smartphones.</td></tr>
+<tr><td class="k">p95</td><td>95 % of requests are faster than this value.</td></tr>
+<tr><td class="k">Read-only server</td><td>The public server only serves results; it never computes or receives user files.</td></tr>
+<tr><td class="k">VM</td><td>Virtual machine: a server rented or provided by the university.</td></tr>
+</table></div>
+</section>
+</main>
+</div>
+
+<script>
+/* ===================== ASSUMPTIONS (edit here to change defaults) =====================
+   key: [label, default, unit/help, status (meas | est | conf), group]                      */
+const ASSUMPTIONS = {
+  units:            ["Places (municipalities)", 7896, "ISTAT, measured from boundaries", "meas", "Space"],
+  grid_cells_land:  ["2.2 km land cells", 62000, "Italy ≈ 302,000 km² / 4.84 km²", "est", "Space"],
+  grid_cells_domain:["2.2 km domain cells", 371640, "570 × 652 grid of the dataset", "est", "Space"],
+  raw_vars:         ["Variables downloaded", 10, "per dataset", "est", "Raw data"],
+  bytes:            ["Bytes per value", 4, "float32", "meas", "Raw data"],
+  compression:      ["Compression factor", 1.0, "1 = none, 0.5 = NetCDF compressed", "conf", "Raw data"],
+  years_rean:       ["Reanalysis years", 32, "1989–2020", "est", "Raw data"],
+  years_proj_hist:  ["Projection historical years", 17, "1989–2005", "est", "Raw data"],
+  years_proj_fut:   ["Projection future years", 45, "2006–2050, per scenario", "est", "Raw data"],
+  scenarios:        ["Scenarios", 2, "RCP4.5, RCP8.5", "conf", "Raw data"],
+  other_tb:         ["Other datasets (TB)", 0.6, "ERA5, ERA5-Land, CORDEX", "est", "Raw data"],
+  processed_factor: ["Processed copies (× raw)", 1.0, "processed + validated", "est", "Raw data"],
+  hist_decades:     ["Past decades", 3, "1991–2020", "conf", "Published"],
+  fut_decades:      ["Future decades", 3, "2021–2050", "conf", "Published"],
+  epw_mb:           ["EPW file size (MB)", 1.62, "measured on prototype", "meas", "Published"],
+  kpis:             ["KPIs per place", 10, "expert list, PRELUDE D8.5", "conf", "Published"],
+  trend_years:      ["Yearly trend values", 60, "1991–2050", "est", "Published"],
+  row_bytes:        ["DB bytes per KPI value", 80, "incl. index, Zengqi", "est", "Published"],
+  disk_margin:      ["Server disk margin (×)", 1.5, "growth + OS", "est", "Published"],
+  geo_gzip_mb:      ["Map geometry (MB gzip)", 0.8, "measured, 0.003° simplified", "meas", "Network"],
+  map_payload_kb:   ["Map values per request (KB gzip)", 34, "measured", "meas", "Network"],
+  switches:         ["Map switches per session", 10, "typical expert", "est", "Network"],
+  sessions_day:     ["Sessions per day", 50, "peak day", "est", "Network"],
+  users_peak:       ["Peak simultaneous users", 10, "e.g. a class", "est", "Network"],
+  map_target_s:     ["Map response target (s)", 3, "user requirement", "conf", "Targets"],
+  idle_s:           ["Kiosk idle reset (s)", 120, "user requirement", "conf", "Targets"],
+  sim_target_min:   ["Annual simulation target (min)", 5, "user requirement", "conf", "Targets"],
+  sim_min:          ["Annual simulation time (min)", 2, "benchmark T2 pending", "est", "Expert PC"],
+  runs_session:     ["Runs per session", 6, "3 decades × 2 scenarios", "est", "Expert PC"],
+  pc_cores:         ["Expert PC cores (min)", 4, "requirement", "conf", "Expert PC"],
+  srv_vcpu:         ["Server vCPU", 4, "to confirm with hosting", "conf", "Server"],
+  srv_ram_gb:       ["Server RAM (GB)", 8, "to confirm with hosting", "conf", "Server"],
+};
+/* measured in the prototype tests (16 Nov 2026) */
+const EVIDENCE = {"muni":7896,"geo_raw_mb":35.85,"geo_mb":3.74,"geo_gzip_mb":0.8,"api_map_ms":48,"api_map_p95":57.7,"api_map_kb":33.3,
+  "api_unit_ms":1.7,"api_trend_ms":2.2,"api_epw_ms":126,"epw_mb_meas":1.62,"load_rps":19.1,"load_med":510,"load_p95":750,
+  "first_ms":5173,"switch_ms":533,"kiosk_ms":746,"runner_s":2.36};
+
+function compute(a){
+  const H=8766, c={};
+  c.rean_tb = a.grid_cells_domain*H*a.years_rean*a.raw_vars*a.bytes*a.compression/1e12;
+  c.proj_tb = a.grid_cells_domain*H*(a.years_proj_hist+a.years_proj_fut*a.scenarios)*a.raw_vars*a.bytes*a.compression/1e12;
+  c.raw_tb = c.rean_tb + c.proj_tb + a.other_tb;
+  c.proc_tb = c.raw_tb*a.processed_factor;
+  c.olgyay_tb = c.raw_tb + c.proc_tb;
+  c.olgyay_request_tb = Math.ceil(c.olgyay_tb*1.25/5)*5;
+  c.epw_sets = a.hist_decades + a.fut_decades*a.scenarios;
+  c.epw_files = a.units*c.epw_sets;
+  c.epw_gb = c.epw_files*a.epw_mb/1000;
+  c.kpi_rows_m = a.units*a.kpis*(c.epw_sets + a.trend_years*a.scenarios)/1e6;
+  c.db_gb = c.kpi_rows_m*1e6*a.row_bytes/1e9;
+  c.pub_total_gb = c.epw_gb + c.db_gb + 0.5;
+  c.srv_disk_gb = Math.ceil(c.pub_total_gb*a.disk_margin/50)*50;
+  c.session_mb = a.geo_gzip_mb + a.switches*a.map_payload_kb/1000 + 0.2 + a.epw_mb;
+  c.daily_gb = a.sessions_day*c.session_mb/1000;
+  c.peak_mbps = Math.max(10, Math.ceil(a.users_peak*a.geo_gzip_mb*8/a.map_target_s));
+  c.kiosk_cache_mb = a.geo_gzip_mb + a.units*4*c.epw_sets*12/1e6 + 2;
+  c.grid_vs_units = a.grid_cells_land/a.units;
+  c.session_min = Math.ceil(a.runs_session/Math.max(1,a.pc_cores-1))*a.sim_min;
+  return c;
+}
+const fmt = (v)=> v>=1000 ? Math.round(v).toLocaleString("en-GB") : v>=100 ? Math.round(v).toString() : v>=10 ? (Math.round(v*10)/10).toString() : (Math.round(v*100)/100).toString();
+let A = {};
+function render(){
+  const c = compute(A);
+  document.querySelectorAll("[data-c]").forEach(e=>e.textContent = fmt(c[e.dataset.c]));
+  document.querySelectorAll("[data-a]").forEach(e=>e.textContent = fmt(A[e.dataset.a]));
+  document.querySelectorAll("[data-e]").forEach(e=>e.textContent = fmt(EVIDENCE[e.dataset.e]));
+}
+function buildPanel(){
+  const tag={meas:"t-meas",est:"t-est",conf:"t-conf"}, lab={meas:"measured",est:"estimate",conf:"to confirm"};
+  let grp="", html="";
+  for (const [k,[label,def,help,st,g]] of Object.entries(ASSUMPTIONS)){
+    if (g!==grp){ html+=`<div class="grp">${g}</div>`; grp=g; }
+    html+=`<div class="a"><label for="in_${k}">${label} <span class="tag ${tag[st]}">${lab[st]}</span><small>${help}</small></label>
+      <input id="in_${k}" type="number" step="any" value="${A[k]}" data-k="${k}" class="${A[k]!==def?'changed':''}"></div>`;
+  }
+  document.getElementById("panel").innerHTML = html;
+  document.querySelectorAll("#panel input").forEach(inp=>inp.addEventListener("input",e=>{
+    const k=e.target.dataset.k, v=parseFloat(e.target.value);
+    if(!isNaN(v)){ A[k]=v; e.target.classList.toggle("changed", v!==ASSUMPTIONS[k][1]); save(); render(); }
+  }));
+}
+function save(){ try{ localStorage.setItem("wedo_arch_assumptions", JSON.stringify(A)); }catch(_){} }
+function load(){
+  A = Object.fromEntries(Object.entries(ASSUMPTIONS).map(([k,v])=>[k,v[1]]));
+  try{ const s=JSON.parse(localStorage.getItem("wedo_arch_assumptions")||"{}"); for(const k in s) if(k in A) A[k]=s[k]; }catch(_){}
+}
+document.getElementById("rst").onclick=()=>{ try{localStorage.removeItem("wedo_arch_assumptions");}catch(_){} load(); buildPanel(); render(); };
+document.getElementById("exp").onclick=()=>{
+  const b=new Blob([JSON.stringify(A,null,2)],{type:"application/json"}); const a=document.createElement("a");
+  a.href=URL.createObjectURL(b); a.download="wedo_architecture_assumptions.json"; a.click();
+};
+document.getElementById("imp").onclick=()=>document.getElementById("impf").click();
+document.getElementById("impf").onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{ const s=JSON.parse(await f.text()); for(const k in s) if(k in A) A[k]=+s[k]; save(); buildPanel(); render(); }catch(err){ alert("Not a valid file"); }
+};
+load(); buildPanel(); render();
+</script>
+</body>
+</html>

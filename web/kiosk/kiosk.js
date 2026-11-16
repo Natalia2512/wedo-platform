@@ -2,7 +2,7 @@ import { getJSON, fmt, onIdle } from "/shared/wedo.js";
 
 // Kiosk = prepared results only (FREQ_8): every number comes from precomputed API responses.
 const FUTURE = "2041-2050";
-const QUICK = ["001", "015", "058", "063", "072", "082", "118", "048"]; // Torino, Milano, Roma, Napoli, Bari, Palermo, Cagliari, Firenze
+const QUICK = ["001272", "015146", "058091", "063049", "072006", "082053", "118006", "048017"]; // Torino, Milano, Roma, Napoli, Bari, Palermo, Cagliari, Firenze
 const IDLE_MS = 120000;
 const s = { unit: null, name: "", scenario: "rcp85", guess: null };
 let meta, geo, kmap;

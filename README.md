@@ -11,7 +11,7 @@ Each person creates their own Python environment (it is not stored in Git). Pyth
 Windows (PowerShell), from the `wedo-platform` folder:
 
 ```powershell
-python -m venv C:\Users\<you>\wedo-venv         
+python -m venv C:\Users\<you>\wedo-venv            # outside OneDrive; ArcGIS users: use ArcGIS Pro's python.exe here
 C:\Users\<you>\wedo-venv\Scripts\python.exe -m pip install -r requirements.txt
 cd api
 C:\Users\<you>\wedo-venv\Scripts\python.exe -m uvicorn main:app --port 8000
@@ -25,6 +25,7 @@ python3 -m venv ~/wedo-venv
 cd api && ~/wedo-venv/bin/python -m uvicorn main:app --port 8000
 ```
 
+Do not install the libraries into ArcGIS Pro's own environment.
 
 - Expert site: http://localhost:8000/expert/
 - Kiosk: http://localhost:8000/kiosk/ (best full screen, F11)
@@ -39,7 +40,7 @@ cd api && ~/wedo-venv/bin/python -m uvicorn main:app --port 8000
 | `api/main.py` | FastAPI endpoints = data contract between WP2/WP3 and the interfaces |
 | `web/expert/` | Expert map site: selectors, fixed-scale map, location panel, trend chart, EPW download, local results viewer |
 | `web/kiosk/` | Kiosk: attract → place → prediction quiz → today vs 2040s → building no action vs adaptation → QR |
-| `web/data/units.geojson` | Spatial units for the mock (Italian provinces, ISTAT via openpolis, CC-BY); real units decided at PDR |
+| `web/data/units.geojson` | Spatial units for the mock (Italian municipalities (7,896), ISTAT via openpolis, CC-BY, simplified 0.003° |
 | `web/vendor/` | MapLibre GL 4.7.1 and qrcode-generator, stored locally so the kiosk works offline |
 | `sim/wedo_sim.py` | Local runner: downloads the EPW, runs EnergyPlus on the expert's PC, writes `wedo_results.json` |
 | `sim/tests/fake_energyplus.py` | Stand-in for EnergyPlus, used only to test the runner without EnergyPlus |
