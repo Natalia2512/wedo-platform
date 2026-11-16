@@ -60,6 +60,10 @@ browser: nothing is uploaded.
 
 Test without EnergyPlus: `ENERGYPLUS_EXE=sim/tests/fake_energyplus.py python sim/wedo_sim.py run ...`
 
+## Team workflow
+
+See `CONTRIBUTING.md`: where files go, where scripts run, branches, and test reports (`docs/tests/`).
+
 ## Git rules
 
 - Never commit climate data, EPW outputs or the Python environment (see `.gitignore`).

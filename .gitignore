@@ -16,6 +16,7 @@ data/raw/
 *.nc
 *.grib
 *.epw
+!samples/*.epw
 !web/data/units.geojson
 
 # Editors / OS
